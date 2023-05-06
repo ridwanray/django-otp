@@ -1,0 +1,12 @@
+{% include "emails/layout/header.html" %}
+<!------Email Content Start--->
+
+            Hello {% if fullname %}<strong>{{ fullname }}</strong>{% endif %},<br/><br/>
+
+            Kindly use this token to verify your email.
+            Only valid for 24 hours.<br />
+
+            Token: {{token}}
+            <br />
+<!----Email Content End--->
+{% include "emails/layout/footer.html" %}
