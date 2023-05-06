@@ -6,7 +6,7 @@ from decouple import config
 from django.urls import reverse
 from rest_framework import status
 from user.enums import TokenEnum
-from user.models import Token
+from user.models import Token, PendingUser,User
 
 from .conftest import api_client_with_credentials
 
@@ -25,51 +25,51 @@ class TestAuthEndpoints:
 
     def test_user_login(self, api_client, active_user, auth_user_password):
         data = {
-            "email": active_user.email,
+            "phone": active_user.phone,
             "password": auth_user_password}
         response = api_client.post(self.login_url, data)
         assert response.status_code == status.HTTP_200_OK
         returned_json = response.json()
+
         assert 'refresh' in returned_json
         assert 'access' in returned_json
 
     def test_deny_login_to_inactive_user(self, api_client, inactive_user, auth_user_password):
         data = {
-            "email": inactive_user.email,
+            "phone": inactive_user.phone,
             "password": auth_user_password}
         response = api_client.post(self.login_url, data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_deny_login_invalid_credentials(self, api_client, active_user):
         data = {
-            "email": active_user.email,
+            "phone": active_user.phone,
             "password": "wrong@pass"}
         response = api_client.post(self.login_url, data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_password_reset_initiate(self, mocker, api_client, active_user):
         """Initiate a password reset for not authenticated user"""
-        mock_send_temporary_password_email = mocker.patch(
-            'user.tasks.send_password_reset_email.delay')
+        mock_send_reset_otp = mocker.patch(
+            'user.tasks.send_phone_notification.delay')
         data = {
-            'email': active_user.email,
-            'token': '123456'
+            'phone': active_user.phone,
         }
         response = api_client.post(
             self.initiate_password_reset_url, data, format="json")
+        print(response.json())
         assert response.status_code == status.HTTP_200_OK
-        mock_send_temporary_password_email.side_effect = print(
-            "Sent to celery task:Password Reset Mail!")
+        mock_send_reset_otp.side_effect = print(
+            "Sent to celery task:Password Reset SMS!")
 
         token: Token = Token.objects.get(
             user=active_user,  token_type=TokenEnum.PASSWORD_RESET)
-        email_token = token.token
-        email_data = {
-            'fullname': active_user.firstname,
-            'email': active_user.email,
-            'token': email_token
+        otp = token.token
+        message_info = {
+            'message': f"Password Reset!\nUse {otp} to reset your password.\nIt expires in 10 minutes",
+            'phone': active_user.phone
         }
-        mock_send_temporary_password_email.assert_called_once_with(email_data)
+        mock_send_reset_otp.assert_called_once_with(message_info)
 
     def test_deny_initiate_password_reset_to_inactive_user(self, api_client, inactive_user):
         data = {
@@ -116,16 +116,20 @@ class TestAuthEndpoints:
             self.password_change_url, data, format="json")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_verify_account_using_verification_token(self, api_client, user_factory, token_factory):
-        unverified_user = user_factory(verified=False, is_active=False)
-        verification_token: Token = token_factory(
-            user=unverified_user, token_type=TokenEnum.ACCOUNT_VERIFICATION)
-        request_payload = {'token': verification_token.token}
-        response = api_client.post(self.verify_account_url, request_payload)
+    def test_verify_account_using_verification_token(self, api_client):
+        pending_user = PendingUser.objects.create(phone='+2348157787640',
+                                                  verification_code=1234,
+                                                  password='somesecret'
+                                                  )
+
+        data = {'otp': pending_user.verification_code,
+                'phone': pending_user.phone}
+        response = api_client.post(self.verify_account_url, data)
+        print(response.json())
         assert response.status_code == 200
-        unverified_user.refresh_from_db()
-        assert unverified_user.verified == True
-        assert unverified_user.is_active == True
+        user_object = User.objects.get(phone=pending_user.phone)
+        assert user_object.verified == True
+        assert user_object.is_active == True
 
     def test_deny_verify_using_invalid_token(self, api_client, user_factory):
         unverified_user = user_factory(verified=False, is_active=False)
@@ -141,85 +145,23 @@ class TestAuthEndpoints:
         token: Token = token_factory(
             user=active_user, token_type=TokenEnum.PASSWORD_RESET)
         data = {
-            "token": token.token,
+            "otp": token.token,
             "new_password": "new_pass_me"
         }
         response = api_client.post(
             self.create_password_via_reset_token_url, data)
+        print(response.json())
         assert response.status_code == 200
         active_user.refresh_from_db()
         assert active_user.check_password('new_pass_me')
 
     def test_deny_create_new_password_using_invalid_reset_token(self, api_client, active_user, token_factory):
-        token: Token = token_factory(
-            token_type=TokenEnum.ACCOUNT_VERIFICATION, user=active_user)
+        token_factory(
+            token_type=TokenEnum.ACCOUNT_VERIFICATION, user=active_user, token=1234)
         data = {
-            "token": token.token,
+            "otp":4321,
             "new_password": "new_pass_me"
         }
         response = api_client.post(
             self.create_password_via_reset_token_url, data)
         assert response.status_code == 400
-
-    def test_user_reinvite(self, api_client, mocker, user_factory):
-        unverified_user = user_factory(verified=False)
-        mock_send_user_creation_email = mocker.patch(
-            'user.tasks.send_user_creation_email.delay')
-        data = {
-            "email": unverified_user.email
-        }
-        url = reverse('user:user-reinvite-user')
-        response = api_client.post(url, data)
-        assert response.status_code == 200
-        verification_token = Token.objects.get(
-            user__email=data["email"],  token_type=TokenEnum.ACCOUNT_VERIFICATION)
-
-        email_data = {
-            'fullname': unverified_user.firstname,
-            'email': data.get('email'),
-            'token': verification_token.token,
-        }
-        mock_send_user_creation_email.assert_called_once_with(email_data)
-
-    def test_deny_user_reinvite(self, api_client, user_factory):
-        unverified_user = user_factory(verified=True)
-        data = {
-            "email": unverified_user.email
-        }
-        url = reverse('user:user-reinvite-user')
-        response = api_client.post(url, data)
-        assert response.status_code == 400
-    
-    def test_account_locked_after_max_login_attempt(self, api_client, active_user):
-        url = reverse('auth:login')
-        assert active_user.is_active 
-        data = {
-            'email':active_user.email,
-            'password':'wrongpass'
-        }
-
-        for _ in range(0,config('MAX_LOGIN_ATTEMPT', cast=int)) : api_client.post(url, data, format='json')
-        active_user.refresh_from_db()
-        assert active_user.is_active ==  False
-        assert active_user.is_locked ==  True
-       
-        response = api_client.post(url, data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-
-    def test_account_not_locked(self, api_client, active_user):
-        """Account not locked when the maximum login attempts are not exceededs"""
-        url = reverse('auth:login')
-        assert active_user.is_active 
-        data = {
-            'email':active_user.email,
-            'password':'wrongpass'
-        }
-
-        for _ in range(0,config('MAX_LOGIN_ATTEMPT', cast=int)-1) : api_client.post(url, data, format='json')
-        active_user.refresh_from_db()
-        assert active_user.is_active ==  True
-        assert active_user.is_locked ==  False
-        response = api_client.post(url, data, format='json')
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-

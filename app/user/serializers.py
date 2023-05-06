@@ -83,7 +83,7 @@ class CreatePasswordFromTokenSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
 
 
-class OTPVerificationSerializer(serializers.Serializer):
+class AccountVerificationSerializer(serializers.Serializer):
     otp = serializers.IntegerField(required=True)
     phone = serializers.CharField(required=True, allow_blank=False)
 
@@ -104,8 +104,9 @@ class OTPVerificationSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data: dict):
         validated_data.pop('otp')
+        pending_user = validated_data.pop('pending_user')
         User.objects.create_user_with_phone(**validated_data)
-        validated_data.get('pending_user').delete()
+        pending_user.delete()
         return validated_data
 
 

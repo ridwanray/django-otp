@@ -32,16 +32,15 @@ def auth_user_password()->str:
 @pytest.fixture
 def authenticate_user(api_client, active_user: User,auth_user_password):
     """Create a user, assign specified role and returns token needed for authentication"""
-    def _user(verified=True, is_active = True,is_admin=False, roles=[], permissions = []):
+    def _user(verified=True, is_active = True,is_admin=False):
         active_user.verified = verified
         active_user.is_active = is_active
         active_user.is_admin = is_admin
-        active_user.roles = roles
         active_user.save()
         active_user.refresh_from_db()
         url = reverse("auth:login")
         data = {
-           "email": active_user.email,
+           "phone": active_user.phone,
            "password": auth_user_password,
         }
         response = api_client.post(url, data)

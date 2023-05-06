@@ -66,24 +66,6 @@ Run the server using:
 ```
 python manage.py runserver
 ```
-
-#  Generating Fixtures (Seeding Permissions)
-
-## Permissions
-
-Load permissions needed in app into the db
-
-```bash
-python manage.py loaddata */fixtures/*.json
-```
-
-Export Permissions from db
-
-```sh
-python manage.py dumpdata  --format=json user.Permission -o core/fixtures/Permission.json
-```
-
-
 Access docs:
 ```sh
 http://localhost:8000/api/v1/doc

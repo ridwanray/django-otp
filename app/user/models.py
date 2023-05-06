@@ -52,7 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class PendingUser(AuditableModel):
     phone =  models.CharField(max_length=20)
-    verification_code = models.PositiveIntegerField()
+    verification_code = models.CharField(max_length=8, blank=True, null=True)
     password = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -75,7 +75,7 @@ class Token(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
-    token = models.CharField(max_length=255, null=True)
+    token = models.CharField(max_length=8)
     token_type = models.CharField(max_length=100, choices=TOKEN_TYPE_CHOICE)
     created_at = models.DateTimeField(auto_now_add=True)
 

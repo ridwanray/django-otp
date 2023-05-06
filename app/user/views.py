@@ -16,7 +16,7 @@ from .serializers import (AuthTokenSerializer,OnboardUserSerializer,
                           CreatePasswordFromTokenSerializer,
                           CustomObtainTokenPairSerializer, EmailSerializer,
                           ListUserSerializer, PasswordChangeSerializer,
-                          OTPVerificationSerializer,PhoneSerializer,
+                          AccountVerificationSerializer,PhoneSerializer,
                           UpdateUserSerializer)
 from .utils import IsAdmin,  is_admin_user
 
@@ -78,7 +78,7 @@ class AuthViewsets(viewsets.GenericViewSet):
     @action(
         methods=["POST"],
         detail=False,
-        serializer_class=OTPVerificationSerializer,
+        serializer_class=AccountVerificationSerializer,
         url_path="verify-account",
     )
     def verify_account(self, request, pk=None):

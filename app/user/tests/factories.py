@@ -11,6 +11,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
         
     email = factory.Sequence(lambda n: 'person{}@example.com'.format(n))
+    phone = factory.Sequence(lambda n: '+234801234567{}'.format(n))
     password = factory.PostGenerationMethodCall('set_password','passer@@@111')
     verified='True'
     firstname = fake.name()
@@ -30,4 +31,4 @@ class TokenFactory(factory.django.DjangoModelFactory):
 class TokenFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Token
-    token = fake.md5()
+    token = 1234
