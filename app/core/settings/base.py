@@ -64,12 +64,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    #"core.middleware.CaptureExceptionMiddleware",
-]
-
-AUTHENTICATION_BACKENDS = [
-    'user.backends.CustomAuthenticationBackend',
-    'django.contrib.auth.backends.ModelBackend',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -256,13 +250,7 @@ SPECTACULAR_SETTINGS = {
     'OAUTH2_SCOPES': None,
 }
 
-MAX_LOGIN_ATTEMPT = config('MAX_LOGIN_ATTEMPT', cast=int)
-
 
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER')
-
-
-
-TOTP_SECRET = "T46OV4ZKWH6XMLBCFFCDBZM6"
