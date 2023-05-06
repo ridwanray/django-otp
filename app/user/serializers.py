@@ -84,7 +84,7 @@ class CreatePasswordFromTokenSerializer(serializers.Serializer):
 
 
 class AccountVerificationSerializer(serializers.Serializer):
-    otp = serializers.IntegerField(required=True)
+    otp = serializers.CharField(required=True)
     phone = serializers.CharField(required=True, allow_blank=False)
 
     def validate(self, attrs: dict):
