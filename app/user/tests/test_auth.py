@@ -57,7 +57,6 @@ class TestAuthEndpoints:
         }
         response = api_client.post(
             self.initiate_password_reset_url, data, format="json")
-        print(response.json())
         assert response.status_code == status.HTTP_200_OK
         mock_send_reset_otp.side_effect = print(
             "Sent to celery task:Password Reset SMS!")

@@ -24,7 +24,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     lastname = models.CharField(max_length=255, blank=True, null=True)
     image = models.FileField(upload_to="users/", blank=True, null=True)
     phone = models.CharField(max_length=30, unique=True, blank=True, null=True)
-    failed_login_attempts = models.IntegerField(default=0)
     is_locked = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)

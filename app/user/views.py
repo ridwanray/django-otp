@@ -184,7 +184,7 @@ class UserViewsets(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"success": True, "message": "OTP sent for verification!"}, status=400)
+        return Response({"success": True, "message": "OTP sent for verification!"}, status=200)
 
     def list(self, request, *args, **kwargs):
         "Retrieve user lists based on assigned role"
