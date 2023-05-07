@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+
 from core.models import AuditableModel
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -53,7 +54,6 @@ class PendingUser(AuditableModel):
     phone =  models.CharField(max_length=20)
     verification_code = models.CharField(max_length=8, blank=True, null=True)
     password = models.CharField(max_length=255, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
 
     def __str__(self):
@@ -89,11 +89,6 @@ class Token(models.Model):
         if time_diff >= lifespan_in_seconds:
             return False
         return True
-
-    def verify_user(self) -> None:
-        self.user.verified = True
-        self.user.is_active = True
-        self.user.save(update_fields=["verified", "is_active"])
 
     def reset_user_password(self, password: str) -> None:
         self.user.set_password(password)

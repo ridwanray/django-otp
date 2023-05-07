@@ -78,7 +78,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
 
 
-class CreatePasswordFromTokenSerializer(serializers.Serializer):
+class CreatePasswordFromResetOTPSerializer(serializers.Serializer):
     otp = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
@@ -114,7 +114,7 @@ class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
 
-class PhoneSerializer(serializers.Serializer):
+class InitiatePasswordResetSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True, allow_blank=False)
 
     def validate(self, attrs: dict):

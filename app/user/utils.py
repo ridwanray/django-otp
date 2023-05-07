@@ -1,18 +1,13 @@
 import base64
 import os
 import re
-from datetime import datetime, timezone
-from typing import Any, Dict
-
 import pyotp
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
-from django.utils.crypto import get_random_string
 from rest_framework import permissions, serializers
 from twilio.rest import Client
 
 from .enums import SystemRoleEnum
-from .models import Token, User
+from .models import User
 
 client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 

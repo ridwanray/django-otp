@@ -31,7 +31,7 @@ def auth_user_password()->str:
 
 @pytest.fixture
 def authenticate_user(api_client, active_user: User,auth_user_password):
-    """Create a user, assign specified role and returns token needed for authentication"""
+    """Create a user and return token needed for authentication"""
     def _user(verified=True, is_active = True,is_admin=False):
         active_user.verified = verified
         active_user.is_active = is_active

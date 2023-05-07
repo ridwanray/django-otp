@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 TOKEN_TYPE_CHOICE = (
-    ("ACCOUNT_VERIFICATION", "ACCOUNT_VERIFICATION"),
     ("PASSWORD_RESET", "PASSWORD_RESET"),
 )
 
@@ -13,7 +12,6 @@ ROLE_CHOICE = (
 
 @dataclass
 class TokenEnum:
-    ACCOUNT_VERIFICATION = "ACCOUNT_VERIFICATION"
     PASSWORD_RESET = "PASSWORD_RESET"
 
 

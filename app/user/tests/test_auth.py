@@ -1,12 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import time_machine
-from decouple import config
 from django.urls import reverse
 from rest_framework import status
-from user.enums import TokenEnum
-from user.models import Token, PendingUser,User
+from user.enums import TokenEnum, SystemRoleEnum
+from user.models import Token, PendingUser, User
 
 from .conftest import api_client_with_credentials
 
@@ -21,7 +20,7 @@ class TestAuthEndpoints:
 
     login_url = reverse("auth:login")
     verify_account_url = reverse("auth:auth-verify-account")
-    create_password_via_reset_token_url = reverse("auth:auth-create-password")
+    create_password_via_reset_otp_url = reverse("auth:auth-create-password")
 
     def test_user_login(self, api_client, active_user, auth_user_password):
         data = {
@@ -69,14 +68,17 @@ class TestAuthEndpoints:
             'phone': active_user.phone
         }
         mock_send_reset_otp.assert_called_once_with(message_info)
-
-    def test_deny_initiate_password_reset_to_inactive_user(self, api_client, inactive_user):
+    
+    def test_deny_initiate_password_reset(self, api_client):
+        """Deny password change for non-registered user"""
         data = {
-            'email': inactive_user.email,
+            'phone': "+2348157777777",
         }
         response = api_client.post(
             self.initiate_password_reset_url, data, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == 400
+        
+
 
     def test_change_password_using_valid_old_password(self, api_client, authenticate_user, auth_user_password):
         user = authenticate_user()
@@ -115,7 +117,7 @@ class TestAuthEndpoints:
             self.password_change_url, data, format="json")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_verify_account_using_verification_token(self, api_client):
+    def test_verify_account_using_otp(self, api_client):
         pending_user = PendingUser.objects.create(phone='+2348157787640',
                                                   verification_code=1234,
                                                   password='somesecret'
@@ -124,23 +126,36 @@ class TestAuthEndpoints:
         data = {'otp': pending_user.verification_code,
                 'phone': pending_user.phone}
         response = api_client.post(self.verify_account_url, data)
-        print(response.json())
         assert response.status_code == 200
         user_object = User.objects.get(phone=pending_user.phone)
         assert user_object.verified == True
         assert user_object.is_active == True
+        assert user_object.roles == [SystemRoleEnum.CUSTOMER]
 
-    def test_deny_verify_using_invalid_token(self, api_client, user_factory):
-        unverified_user = user_factory(verified=False, is_active=False)
-        token = "sampletoken"
-        request_payload = {'token': token}
-        response = api_client.post(self.verify_account_url, request_payload)
+    def test_deny_verify_account_expired_otp(self, api_client):
+        """Prevent account verification if OTP has expired"""
+        pending_user = PendingUser.objects.create(phone='+2348157787640',
+                                                  verification_code=1234,
+                                                  password='somesecret'
+                                                  )
+        with time_machine.travel(datetime.now(timezone.utc) + timedelta(minutes=13)):
+            data = {'otp': pending_user.verification_code,
+                    'phone': pending_user.phone}
+            response = api_client.post(self.verify_account_url, data)
+            assert response.status_code == 400
+
+    def test_deny_verify_account_using_invalid_otp(self, api_client):
+        pending_user = PendingUser.objects.create(phone='+2348157787640',
+                                                  verification_code=1234,
+                                                  password='somesecret'
+                                                  )
+
+        data = {'otp': 3456,
+                'phone': pending_user.phone}
+        response = api_client.post(self.verify_account_url, data)
         assert response.status_code == 400
-        unverified_user.refresh_from_db()
-        assert unverified_user.verified == False
-        assert unverified_user.is_active == False
 
-    def test_create_new_password_using_valid_reset_token(self, api_client, active_user, token_factory):
+    def test_create_new_password_using_valid_reset_otp(self, api_client, active_user, token_factory):
         token: Token = token_factory(
             user=active_user, token_type=TokenEnum.PASSWORD_RESET)
         data = {
@@ -148,19 +163,18 @@ class TestAuthEndpoints:
             "new_password": "new_pass_me"
         }
         response = api_client.post(
-            self.create_password_via_reset_token_url, data)
-        print(response.json())
+            self.create_password_via_reset_otp_url, data)
         assert response.status_code == 200
         active_user.refresh_from_db()
         assert active_user.check_password('new_pass_me')
 
-    def test_deny_create_new_password_using_invalid_reset_token(self, api_client, active_user, token_factory):
+    def test_deny_create_new_password_using_invalid_reset_otp(self, api_client, active_user, token_factory):
         token_factory(
-            token_type=TokenEnum.ACCOUNT_VERIFICATION, user=active_user, token=1234)
+            token_type=TokenEnum.PASSWORD_RESET, user=active_user, token=1234)
         data = {
-            "otp":4321,
+            "otp": 4321,
             "new_password": "new_pass_me"
         }
         response = api_client.post(
-            self.create_password_via_reset_token_url, data)
+            self.create_password_via_reset_otp_url, data)
         assert response.status_code == 400

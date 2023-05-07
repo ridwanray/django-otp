@@ -13,10 +13,10 @@ from .enums import TokenEnum
 from .filters import UserFilter
 from .models import Token, User
 from .serializers import (AuthTokenSerializer,OnboardUserSerializer,
-                          CreatePasswordFromTokenSerializer,
+                          CreatePasswordFromResetOTPSerializer,
                           CustomObtainTokenPairSerializer, EmailSerializer,
                           ListUserSerializer, PasswordChangeSerializer,
-                          AccountVerificationSerializer,PhoneSerializer,
+                          AccountVerificationSerializer,InitiatePasswordResetSerializer,
                           UpdateUserSerializer)
 from .utils import IsAdmin,  is_admin_user
 
@@ -40,20 +40,20 @@ class AuthViewsets(viewsets.GenericViewSet):
     @action(
         methods=["POST"],
         detail=False,
-        serializer_class=PhoneSerializer,
+        serializer_class=InitiatePasswordResetSerializer,
         url_path="initiate-password-reset",
     )
     def initiate_password_reset(self, request, pk=None):
-        """Send temporary token to user phone to be used for password reset"""
+        """Send temporary OTP to user phone to be used for password reset"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"success": True,
                          "message": "Temporary password sent to your mobile!"}, status=200)
 
-    @action(methods=['POST'], detail=False, serializer_class=CreatePasswordFromTokenSerializer, url_path='create-password')
+    @action(methods=['POST'], detail=False, serializer_class=CreatePasswordFromResetOTPSerializer, url_path='create-password')
     def create_password(self, request, pk=None):
-        """Create a new password given the reset token send to user email"""
+        """Create a new password given the reset OTP sent to user phone number"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token: Token = Token.objects.filter(

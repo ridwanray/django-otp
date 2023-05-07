@@ -15,7 +15,7 @@ class CustomUserManager(BaseUserManager):
         if not phone:
             raise ValueError(_('Phone must be set'))
         user = self.model(phone=phone, is_active=True,
-                          verified=True, **extra_fields)
+                          verified=True, roles = [SystemRoleEnum.CUSTOMER,], **extra_fields)
         user.save()
         return user
 
