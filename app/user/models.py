@@ -61,7 +61,7 @@ class PendingUser(AuditableModel):
         return f"{str(self.phone)} {self.verification_code}"
     
     def is_valid(self) -> bool:
-        """5 mins token validation"""
+        """10 mins OTP validation"""
         lifespan_in_seconds = float(settings.OTP_EXPIRE_TIME * 60)
         now = datetime.now(timezone.utc)
         time_diff = now - self.created_at

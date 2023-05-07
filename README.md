@@ -25,7 +25,7 @@ docker compose build && docker compose up
 ```
 to start the container. As an alternative, run:
 ```
-docker compose -f docker-compose.dev.yml up --build
+docker-compose -f docker-compose.dev.yml up --build
 ```
 to build and run the container using the dev yaml file.
 Make sure to externalize the db instance to be used. It can be in another container.
