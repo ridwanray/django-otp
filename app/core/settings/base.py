@@ -208,7 +208,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_BROKER_URL = config('RABBITMQ_URL')
 FLOWER_BASIC_AUTH = os.environ.get('FLOWER_BASIC_AUTH')
-EMAIL_FROM = config("SENDER_EMAIL")
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
