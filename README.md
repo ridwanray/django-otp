@@ -1,6 +1,6 @@
 # Django - DRF & OTP verification
-This app shows a user can be onboarded on the system using phone verification
-
+This app shows how to handle mobile phone authentication and verification for a user management solution. <br>
+Complete guide: https://lnkd.in/dA83F8z4
 
 ## Tools & Services:
 - Django & DRF : for building the APIs
