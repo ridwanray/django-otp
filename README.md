@@ -1,6 +1,6 @@
 # Django - DRF & OTP verification
 This app shows how to handle mobile phone authentication and verification for a user management solution. <br>
-Complete guide: https://lnkd.in/dA83F8z4
+Complete guide: [https://blog.devgenius.io/how-to-implement-mobile-number-verification-and-authentication-with-otp-in-django-drf-73d3161380d](https://www.google.com)
 
 ## Tools & Services:
 - Django & DRF : for building the APIs
